@@ -9,7 +9,23 @@ const axios = require('axios');
 
 const server = http.createServer();
 const io = socketIO(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5000",
+      "http://localhost:5001",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:5000",
+      "http://127.0.0.1:5001",
+      "https://github.com",
+      "https://github.dev",
+      "*"
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400
+  }
 });
 
 const MARKET_DATA_URL = process.env.MARKET_DATA_URL || 'http://localhost:6004';
