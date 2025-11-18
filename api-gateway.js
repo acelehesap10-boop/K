@@ -40,7 +40,18 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+// OPTIONS handler for preflight requests
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,X-API-Key');
+    res.header('Access-Control-Max-Age', '86400');
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 

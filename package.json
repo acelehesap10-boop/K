@@ -7,12 +7,22 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "python": "python app.py",
+    "gateway": "node api-gateway.js",
+    "agent": "node copilot-agent.js",
+    "start-all": "bash start-services.sh",
     "build": "webpack --mode production",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["fullstack", "nodejs", "express", "react", "mongodb", "socketio"],
+  "keywords": [
+    "fullstack",
+    "nodejs",
+    "express",
+    "react",
+    "mongodb",
+    "socketio"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -26,7 +36,6 @@
     "babel-loader": "^10.0.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
     "eslint": "^9.39.1",
     "express": "^5.1.0",
     "express-validator": "^7.3.0",
@@ -45,5 +54,11 @@
     "typescript": "^5.9.3",
     "webpack": "^5.103.0",
     "webpack-cli": "^6.0.1"
+  },
+  "devDependencies": {
+    "@octokit/rest": "^22.0.1",
+    "chalk": "^5.6.2",
+    "dotenv": "^17.2.3",
+    "inquirer": "^13.0.1"
   }
 }
