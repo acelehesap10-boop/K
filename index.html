@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapsamlı Web Uygulaması</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-indigo-900 mb-4">
+                🚀 Kapsamlı Web Uygulaması
+            </h1>
+            <p class="text-xl text-gray-700">
+                Modern teknolojilerle güçlendirilmiş full-stack uygulama
+            </p>
+        </header>
+
+        <!-- Ana İçerik -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Backend Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <span class="text-3xl mr-3">⚙️</span>
+                    <h2 class="text-2xl font-bold text-gray-800">Backend</h2>
+                </div>
+                <ul class="space-y-2 text-gray-600">
+                    <li>✅ Node.js + Express</li>
+                    <li>✅ Python + Flask</li>
+                    <li>✅ MongoDB Database</li>
+                    <li>✅ Socket.IO Realtime</li>
+                    <li>✅ JWT Authentication</li>
+                </ul>
+            </div>
+
+            <!-- Frontend Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <span class="text-3xl mr-3">🎨</span>
+                    <h2 class="text-2xl font-bold text-gray-800">Frontend</h2>
+                </div>
+                <ul class="space-y-2 text-gray-600">
+                    <li>✅ React + Next.js</li>
+                    <li>✅ TypeScript</li>
+                    <li>✅ Tailwind CSS</li>
+                    <li>✅ Webpack + Babel</li>
+                    <li>✅ ESLint + Prettier</li>
+                </ul>
+            </div>
+
+            <!-- AI/ML Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <span class="text-3xl mr-3">🤖</span>
+                    <h2 class="text-2xl font-bold text-gray-800">AI & ML</h2>
+                </div>
+                <ul class="space-y-2 text-gray-600">
+                    <li>✅ TensorFlow</li>
+                    <li>✅ PyTorch</li>
+                    <li>✅ Keras</li>
+                    <li>✅ Scikit-learn</li>
+                    <li>✅ OpenCV</li>
+                </ul>
+            </div>
+
+            <!-- Data Science Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <span class="text-3xl mr-3">📊</span>
+                    <h2 class="text-2xl font-bold text-gray-800">Data Science</h2>
+                </div>
+                <ul class="space-y-2 text-gray-600">
+                    <li>✅ Pandas</li>
+                    <li>✅ NumPy</li>
+                    <li>✅ Matplotlib</li>
+                    <li>✅ Seaborn</li>
+                    <li>✅ SciPy</li>
+                </ul>
+            </div>
+
+            <!-- Testing Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <span class="text-3xl mr-3">🧪</span>
+                    <h2 class="text-2xl font-bold text-gray-800">Testing</h2>
+                </div>
+                <ul class="space-y-2 text-gray-600">
+                    <li>✅ Pytest</li>
+                    <li>✅ Selenium</li>
+                    <li>✅ Black</li>
+                    <li>✅ Flake8</li>
+                    <li>✅ MyPy</li>
+                </ul>
+            </div>
+
+            <!-- Tools Card -->
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-shadow">
+                <div class="flex items-center mb-4">
+                    <span class="text-3xl mr-3">🛠️</span>
+                    <h2 class="text-2xl font-bold text-gray-800">Tools</h2>
+                </div>
+                <ul class="space-y-2 text-gray-600">
+                    <li>✅ Redis</li>
+                    <li>✅ Celery</li>
+                    <li>✅ Axios</li>
+                    <li>✅ BeautifulSoup</li>
+                    <li>✅ NLTK & Spacy</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- API Test Section -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">🔌 API Test</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button 
+                    onclick="testNodeAPI()" 
+                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                    Node.js API Test
+                </button>
+                <button 
+                    onclick="testPythonAPI()" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                    Python API Test
+                </button>
+            </div>
+            <div id="api-result" class="mt-6 p-4 bg-gray-100 rounded-lg hidden">
+                <pre class="text-sm text-gray-800 overflow-x-auto"></pre>
+            </div>
+        </div>
+
+        <!-- Real-time Chat -->
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">💬 Gerçek Zamanlı Chat (Socket.IO)</h2>
+            <div id="messages" class="h-64 overflow-y-auto bg-gray-50 p-4 rounded-lg mb-4">
+                <p class="text-gray-500 text-center">Mesajlar burada görünecek...</p>
+            </div>
+            <div class="flex gap-2">
+                <input 
+                    id="messageInput" 
+                    type="text" 
+                    placeholder="Mesajınızı yazın..." 
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button 
+                    onclick="sendMessage()" 
+                    class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                    Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Socket.IO bağlantısı
+        const socket = io('http://localhost:5000');
+        
+        socket.on('connect', () => {
+            console.log('Socket.IO bağlantısı başarılı');
+            addMessage('Sistem', 'Bağlantı kuruldu!', 'text-green-600');
+        });
+
+        socket.on('message', (data) => {
+            addMessage(data.user || 'Anonim', data.text, 'text-blue-600');
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (text) {
+                socket.emit('message', { user: 'Kullanıcı', text });
+                input.value = '';
+            }
+        }
+
+        function addMessage(user, text, colorClass = 'text-gray-800') {
+            const messagesDiv = document.getElementById('messages');
+            if (messagesDiv.children[0]?.textContent.includes('Mesajlar burada')) {
+                messagesDiv.innerHTML = '';
+            }
+            const messageEl = document.createElement('div');
+            messageEl.className = 'mb-2';
+            messageEl.innerHTML = `<strong class="${colorClass}">${user}:</strong> ${text}`;
+            messagesDiv.appendChild(messageEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function testNodeAPI() {
+            try {
+                const response = await fetch('http://localhost:5000/api');
+                const data = await response.json();
+                showAPIResult(data);
+            } catch (error) {
+                showAPIResult({ error: 'Node.js API çalışmıyor. Server\'ı başlatın.' });
+            }
+        }
+
+        async function testPythonAPI() {
+            try {
+                const response = await fetch('http://localhost:5001/');
+                const data = await response.json();
+                showAPIResult(data);
+            } catch (error) {
+                showAPIResult({ error: 'Python API çalışmıyor. app.py\'yi başlatın.' });
+            }
+        }
+
+        function showAPIResult(data) {
+            const resultDiv = document.getElementById('api-result');
+            const pre = resultDiv.querySelector('pre');
+            pre.textContent = JSON.stringify(data, null, 2);
+            resultDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
