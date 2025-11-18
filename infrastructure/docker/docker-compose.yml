@@ -1,0 +1,227 @@
+version: '3.8'
+
+services:
+  # Matching Engine
+  matching-engine:
+    build:
+      context: ../../services/matching-engine
+      dockerfile: Dockerfile
+    ports:
+      - "6001:6001"
+    environment:
+      - NODE_ENV=production
+      - MATCHING_ENGINE_PORT=6001
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Blockchain Tracker
+  blockchain-tracker:
+    build:
+      context: ../../services/blockchain-tracker
+      dockerfile: Dockerfile
+    ports:
+      - "6002:6002"
+    environment:
+      - NODE_ENV=production
+      - BLOCKCHAIN_TRACKER_PORT=6002
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Risk Engine
+  risk-engine:
+    build:
+      context: ../../services/risk-engine
+      dockerfile: Dockerfile
+    ports:
+      - "6003:6003"
+    environment:
+      - NODE_ENV=production
+      - RISK_ENGINE_PORT=6003
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Market Data Service
+  market-data:
+    build:
+      context: ../../services/market-data
+      dockerfile: Dockerfile
+    ports:
+      - "6004:6004"
+    environment:
+      - NODE_ENV=production
+      - MARKET_DATA_PORT=6004
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Admin API
+  admin-api:
+    build:
+      context: ../../services/admin-api
+      dockerfile: Dockerfile
+    ports:
+      - "6005:6005"
+    environment:
+      - NODE_ENV=production
+      - ADMIN_API_PORT=6005
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # User API
+  user-api:
+    build:
+      context: ../../services/user-api
+      dockerfile: Dockerfile
+    ports:
+      - "6006:6006"
+    environment:
+      - NODE_ENV=production
+      - USER_API_PORT=6006
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - MATCHING_ENGINE_URL=http://matching-engine:6001
+      - MARKET_DATA_URL=http://market-data:6004
+      - RISK_ENGINE_URL=http://risk-engine:6003
+    depends_on:
+      - matching-engine
+      - market-data
+      - risk-engine
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # WebSocket Gateway
+  websocket-gateway:
+    build:
+      context: ../../services/websocket-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "6007:6007"
+    environment:
+      - NODE_ENV=production
+      - WEBSOCKET_PORT=6007
+      - MATCHING_ENGINE_URL=http://matching-engine:6001
+      - MARKET_DATA_URL=http://market-data:6004
+      - BLOCKCHAIN_TRACKER_URL=http://blockchain-tracker:6002
+    depends_on:
+      - matching-engine
+      - market-data
+      - blockchain-tracker
+    networks:
+      - exchange-network
+    restart: unless-stopped
+
+  # MongoDB (for persistence)
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-changeme}
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - exchange-network
+    restart: unless-stopped
+
+  # Redis (for caching)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # TimescaleDB (time-series data)
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=${TIMESCALE_PASSWORD:-changeme}
+      - POSTGRES_DB=exchange_timeseries
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+    networks:
+      - exchange-network
+    restart: unless-stopped
+
+  # Prometheus (metrics)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  # Grafana (observability)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - exchange-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+networks:
+  exchange-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  redis-data:
+  timescaledb-data:
+  prometheus-data:
+  grafana-data:
