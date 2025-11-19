@@ -12,11 +12,13 @@ require('dotenv').config();
 const app = express();
 
 // Helmet configuration - permissive for development
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  crossOriginEmbedderPolicy: false
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // Ultra-permissive CORS for Cloud Agents
 const corsOptions = {
@@ -32,11 +34,11 @@ const corsOptions = {
     'X-API-Key',
     'X-Auth-Token',
     'X-Cloud-Agent',
-    'User-Agent'
+    'User-Agent',
   ],
   exposedHeaders: ['Content-Length', 'X-Content-Type-Options'],
   maxAge: 86400,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
@@ -45,7 +47,10 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,X-API-Key');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Content-Type,Authorization,X-Requested-With,Accept,X-API-Key'
+    );
     res.header('Access-Control-Max-Age', '86400');
     res.sendStatus(200);
   } else {
@@ -54,15 +59,23 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+const { middlewareMetrics, metricsEndpoint } = require('./metrics');
+const { initTracing } = require('./telemetry/node-otel');
+initTracing('api-gateway');
+app.use(middlewareMetrics());
+metricsEndpoint(app);
 
 // Custom middleware to bypass 403 errors
 app.use((req, res, next) => {
   // Add CORS headers explicitly
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,X-API-Key');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type,Authorization,X-Requested-With,Accept,X-API-Key'
+  );
   res.header('Access-Control-Max-Age', '86400');
-  
+
   // Handle preflight
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
@@ -79,7 +92,7 @@ const SERVICES = {
   matching: process.env.MATCHING_ENGINE_URL || 'http://localhost:6001',
   market: process.env.MARKET_DATA_URL || 'http://localhost:6004',
   risk: process.env.RISK_ENGINE_URL || 'http://localhost:6003',
-  blockchain: process.env.BLOCKCHAIN_TRACKER_URL || 'http://localhost:6002'
+  blockchain: process.env.BLOCKCHAIN_TRACKER_URL || 'http://localhost:6002',
 };
 
 // Health check endpoint
@@ -88,7 +101,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     service: 'api-gateway',
     timestamp: new Date().toISOString(),
-    services: SERVICES
+    services: SERVICES,
   });
 });
 
@@ -104,8 +117,8 @@ app.get('/api-docs', (req, res) => {
       '/api/market/*': 'Market Data (port 6004)',
       '/api/risk/*': 'Risk Engine (port 6003)',
       '/api/blockchain/*': 'Blockchain Tracker (port 6002)',
-      '/ws/*': 'WebSocket Gateway (port 6007)'
-    }
+      '/ws/*': 'WebSocket Gateway (port 6007)',
+    },
   });
 });
 
@@ -143,7 +156,7 @@ app.use('/api/blockchain', (req, res, next) => {
 async function forwardRequest(req, res, serviceUrl, basePath) {
   try {
     const targetUrl = `${serviceUrl}${req.originalUrl.replace(basePath, '')}`;
-    
+
     const config = {
       method: req.method,
       url: targetUrl,
@@ -152,16 +165,16 @@ async function forwardRequest(req, res, serviceUrl, basePath) {
         'X-Forwarded-For': req.ip,
         'X-Forwarded-Proto': req.protocol,
         'X-Forwarded-Host': req.hostname,
-        'X-Real-IP': req.ip
-      }
+        'X-Real-IP': req.ip,
+      },
     };
-    
+
     if (req.body && Object.keys(req.body).length > 0) {
       config.data = req.body;
     }
 
     const response = await axios(config);
-    
+
     res.status(response.status);
     Object.entries(response.headers).forEach(([key, value]) => {
       if (!['content-encoding', 'transfer-encoding'].includes(key.toLowerCase())) {
@@ -171,18 +184,17 @@ async function forwardRequest(req, res, serviceUrl, basePath) {
     res.send(response.data);
   } catch (error) {
     console.error(`Proxy error: ${error.message}`);
-    
+
     // Send error response with 403 prevention
     const status = error.response?.status || 500;
     const data = error.response?.data || { error: error.message };
-    
-    res.status(Math.min(status, 200) === 200 && status !== 200 ? 502 : status)
-      .json({
-        error: true,
-        message: data.error || data.message || 'Gateway Error',
-        status: status,
-        timestamp: new Date().toISOString()
-      });
+
+    res.status(Math.min(status, 200) === 200 && status !== 200 ? 502 : status).json({
+      error: true,
+      message: data.error || data.message || 'Gateway Error',
+      status: status,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 
@@ -199,8 +211,8 @@ app.use((req, res) => {
       '/api/matching/*',
       '/api/market/*',
       '/api/risk/*',
-      '/api/blockchain/*'
-    ]
+      '/api/blockchain/*',
+    ],
   });
 });
 
@@ -210,7 +222,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({
     error: 'Server Error',
     message: err.message,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

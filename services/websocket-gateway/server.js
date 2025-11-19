@@ -11,22 +11,26 @@ const server = http.createServer();
 const io = socketIO(server, {
   cors: {
     origin: [
-      "http://localhost:3000",
-      "http://localhost:5000",
-      "http://localhost:5001",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:5000",
-      "http://127.0.0.1:5001",
-      "https://github.com",
-      "https://github.dev",
-      "*"
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'http://localhost:5001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5000',
+      'http://127.0.0.1:5001',
+      'https://github.com',
+      'https://github.dev',
+      '*',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
-    maxAge: 86400
-  }
+    maxAge: 86400,
+  },
 });
+const { initTracing } = require('../../telemetry/node-otel');
+const client = require('prom-client');
+initTracing('websocket-gateway');
+client.collectDefaultMetrics({ timeout: 5000 });
 
 const MARKET_DATA_URL = process.env.MARKET_DATA_URL || 'http://localhost:6004';
 const MATCHING_ENGINE_URL = process.env.MATCHING_ENGINE_URL || 'http://localhost:6001';
@@ -39,14 +43,12 @@ io.on('connection', (socket) => {
   socket.on('subscribe:price', async (data) => {
     const { symbol, assetClass } = data;
     console.log(`Client ${socket.id} subscribed to ${assetClass}:${symbol}`);
-    
+
     // Forward to market data service
     // In production, use service-to-service WebSocket or message queue
     const interval = setInterval(async () => {
       try {
-        const response = await axios.get(
-          `${MARKET_DATA_URL}/api/price/${assetClass}/${symbol}`
-        );
+        const response = await axios.get(`${MARKET_DATA_URL}/api/price/${assetClass}/${symbol}`);
         socket.emit('price:update', response.data);
       } catch (error) {
         console.error('Price fetch error:', error.message);
@@ -59,7 +61,7 @@ io.on('connection', (socket) => {
   socket.on('subscribe:depth', async (data) => {
     const { symbol, assetClass } = data;
     console.log(`Client ${socket.id} subscribed to depth ${assetClass}:${symbol}`);
-    
+
     const interval = setInterval(async () => {
       try {
         const response = await axios.get(
@@ -76,7 +78,7 @@ io.on('connection', (socket) => {
 
   socket.on('subscribe:blockchain', async () => {
     console.log(`Client ${socket.id} subscribed to blockchain updates`);
-    
+
     const interval = setInterval(async () => {
       try {
         const response = await axios.get(`${BLOCKCHAIN_TRACKER_URL}/api/balances`);
@@ -119,6 +121,20 @@ io.on('connection', (socket) => {
 const PORT = process.env.WEBSOCKET_PORT || 6007;
 server.listen(PORT, () => {
   console.log(`WebSocket Gateway running on port ${PORT}`);
+});
+
+// Expose Prometheus metrics on the same HTTP server
+server.on('request', async (req, res) => {
+  if (req.url === '/metrics') {
+    try {
+      res.setHeader('Content-Type', client.register.contentType);
+      const metrics = await client.register.metrics();
+      res.end(metrics);
+    } catch (err) {
+      res.statusCode = 500;
+      res.end(err.message);
+    }
+  }
 });
 
 module.exports = { server, io };

@@ -1,0 +1,11 @@
+groups:
+- name: platform.rules
+  rules:
+  - alert: MatchingEngineHighLatency
+    expr: histogram_quantile(0.99, sum(rate(matching_engine_request_duration_seconds_bucket[5m])) by (le)) > 0.001
+    for: 2m
+    labels:
+      severity: page
+    annotations:
+      summary: "Matching engine P99 latency high"
+      description: "P99 co-located matching latency is > 1ms (target < 1ms)."

@@ -12,10 +12,12 @@ const jwt = require('jsonwebtoken');
 const app = express();
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 // CORS configuration
 const corsOptions = {
@@ -28,9 +30,9 @@ const corsOptions = {
       'http://127.0.0.1:5000',
       'http://127.0.0.1:5001',
       'https://github.com',
-      'https://github.dev'
+      'https://github.dev',
     ];
-    
+
     if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost')) {
       callback(null, true);
     } else {
@@ -40,14 +42,23 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  maxAge: 86400
+  maxAge: 86400,
 };
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
+const { middlewareMetrics, metricsEndpoint } = require('../../metrics');
+const { initTracing } = require('../../telemetry/node-otel');
+initTracing('user-api');
+app.use(middlewareMetrics());
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.warn(
+    'JWT_SECRET not set. Using in-memory demo tokens; set JWT_SECRET in environment for production.'
+  );
+}
 const MATCHING_ENGINE_URL = process.env.MATCHING_ENGINE_URL || 'http://localhost:6001';
 const MARKET_DATA_URL = process.env.MARKET_DATA_URL || 'http://localhost:6004';
 const RISK_ENGINE_URL = process.env.RISK_ENGINE_URL || 'http://localhost:6003';
@@ -55,7 +66,7 @@ const RISK_ENGINE_URL = process.env.RISK_ENGINE_URL || 'http://localhost:6003';
 // Middleware: Verify JWT
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
-  
+
   if (!token) {
     return res.status(401).json({ error: 'No token provided' });
   }
@@ -103,7 +114,7 @@ app.get('/api/orderbook/:assetClass/:symbol', async (req, res) => {
 app.post('/api/orders', verifyToken, async (req, res) => {
   try {
     const order = { ...req.body, userId: req.user.userId };
-    
+
     // Pre-trade risk check
     const riskCheck = await axios.post(`${RISK_ENGINE_URL}/api/risk/pre-trade`, {
       userId: req.user.userId,
@@ -111,19 +122,19 @@ app.post('/api/orders', verifyToken, async (req, res) => {
       assetClass: order.assetClass,
       side: order.side,
       quantity: order.quantity,
-      price: order.price
+      price: order.price,
     });
 
     if (!riskCheck.data.approved) {
-      return res.status(400).json({ 
-        error: 'Risk check failed', 
-        reason: riskCheck.data.reason 
+      return res.status(400).json({
+        error: 'Risk check failed',
+        reason: riskCheck.data.reason,
       });
     }
 
     // Submit order to matching engine
     const response = await axios.post(`${MATCHING_ENGINE_URL}/api/orders`, order);
-    
+
     // Update position in risk engine if filled
     if (response.data.success && response.data.matches?.length > 0) {
       const totalFilled = response.data.order.quantity - response.data.order.remaining;
@@ -132,7 +143,7 @@ app.post('/api/orders', verifyToken, async (req, res) => {
         symbol: order.symbol,
         assetClass: order.assetClass,
         quantity: order.side === 'BUY' ? totalFilled : -totalFilled,
-        avgPrice: order.price
+        avgPrice: order.price,
       });
     }
 
@@ -156,9 +167,7 @@ app.delete('/api/orders/:symbol/:assetClass/:orderId', verifyToken, async (req, 
 
 app.get('/api/portfolio', verifyToken, async (req, res) => {
   try {
-    const response = await axios.get(
-      `${RISK_ENGINE_URL}/api/risk/portfolio/${req.user.userId}`
-    );
+    const response = await axios.get(`${RISK_ENGINE_URL}/api/risk/portfolio/${req.user.userId}`);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch portfolio' });
@@ -168,10 +177,10 @@ app.get('/api/portfolio', verifyToken, async (req, res) => {
 app.get('/api/risk/var', verifyToken, async (req, res) => {
   try {
     const { confidenceLevel = 0.95, timeHorizon = 1 } = req.query;
-    const response = await axios.post(
-      `${RISK_ENGINE_URL}/api/risk/var/${req.user.userId}`,
-      { confidenceLevel: parseFloat(confidenceLevel), timeHorizon: parseInt(timeHorizon) }
-    );
+    const response = await axios.post(`${RISK_ENGINE_URL}/api/risk/var/${req.user.userId}`, {
+      confidenceLevel: parseFloat(confidenceLevel),
+      timeHorizon: parseInt(timeHorizon),
+    });
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to calculate VaR' });
@@ -181,13 +190,9 @@ app.get('/api/risk/var', verifyToken, async (req, res) => {
 // Demo login (for testing)
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
-  
+
   // Simplified auth - use proper authentication in production
-  const token = jwt.sign(
-    { userId: 'demo-user', email },
-    JWT_SECRET,
-    { expiresIn: '24h' }
-  );
+  const token = jwt.sign({ userId: 'demo-user', email }, JWT_SECRET, { expiresIn: '24h' });
 
   res.json({ token, userId: 'demo-user', email });
 });
@@ -195,6 +200,8 @@ app.post('/api/login', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', service: 'user-api' });
 });
+
+metricsEndpoint(app);
 
 const PORT = process.env.USER_API_PORT || 6006;
 app.listen(PORT, () => {

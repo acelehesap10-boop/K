@@ -10,10 +10,14 @@ const { BlockchainTracker } = require('./index');
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
+  cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
 app.use(express.json());
+const { middlewareMetrics, metricsEndpoint } = require('../../metrics');
+const { initTracing } = require('../../telemetry/node-otel');
+initTracing('blockchain-tracker');
+app.use(middlewareMetrics());
 
 const tracker = new BlockchainTracker();
 
@@ -43,17 +47,18 @@ app.get('/api/confirmation/:chain/:confirmations', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+  res.json({
+    status: 'healthy',
     service: 'blockchain-tracker',
-    lastUpdate: tracker.lastUpdate
+    lastUpdate: tracker.lastUpdate,
   });
 });
+metricsEndpoint(app);
 
 // WebSocket
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  
+
   // Send current balances on connect
   socket.emit('balances', tracker.getBalances());
 

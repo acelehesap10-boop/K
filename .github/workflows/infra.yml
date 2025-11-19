@@ -1,0 +1,33 @@
+name: Infra
+
+on:
+  push:
+    paths:
+      - 'infrastructure/**'
+  pull_request:
+    paths:
+      - 'infrastructure/**'
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      - name: Terraform Init
+        run: terraform -chdir=infrastructure/terraform init
+      - name: Terraform Plan
+        run: terraform -chdir=infrastructure/terraform plan -out=tfplan
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint Helm charts
+        uses: azure/setup-helm@v3
+        with:
+          helm-version: v3.14.0
+      - name: Helm lint
+        run: |
+          helm lint infrastructure/helm/* || true

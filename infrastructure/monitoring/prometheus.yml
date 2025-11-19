@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'k-services'
+    static_configs:
+      - targets: ['localhost:3000', 'localhost:6001', 'localhost:6003', 'localhost:6006']
+
+  - job_name: 'matching-engine'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['matching-engine:9000']

@@ -7,6 +7,10 @@ const { RiskEngine } = require('./index');
 
 const app = express();
 app.use(express.json());
+const { middlewareMetrics, metricsEndpoint } = require('../../metrics');
+const { initTracing } = require('../../telemetry/node-otel');
+initTracing('risk-engine');
+app.use(middlewareMetrics());
 
 const riskEngine = new RiskEngine();
 
@@ -41,7 +45,14 @@ app.post('/api/risk/var/:userId', (req, res) => {
 
 app.post('/api/risk/greeks', (req, res) => {
   const { optionType, spot, strike, timeToExpiry, volatility, riskFreeRate } = req.body;
-  const greeks = riskEngine.calculateGreeks(optionType, spot, strike, timeToExpiry, volatility, riskFreeRate);
+  const greeks = riskEngine.calculateGreeks(
+    optionType,
+    spot,
+    strike,
+    timeToExpiry,
+    volatility,
+    riskFreeRate
+  );
   res.json(greeks);
 });
 
@@ -54,6 +65,8 @@ app.post('/api/risk/price-update', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', service: 'risk-engine' });
 });
+
+metricsEndpoint(app);
 
 const PORT = process.env.RISK_ENGINE_PORT || 6003;
 app.listen(PORT, () => {
