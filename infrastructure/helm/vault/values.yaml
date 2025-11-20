@@ -1,0 +1,27 @@
+server:
+  replicaCount: 3
+  dataStorage:
+    enabled: true
+    storageClass: gp2
+    size: 10Gi
+  ha:
+    enabled: true
+  image:
+    repository: hashicorp/vault
+    tag: '1.12.3'
+  service:
+    type: ClusterIP
+
+# Enable Kubernetes auth via service account
+auth:
+  kubernetes:
+    enabled: true
+    serviceAccount: vault
+
+injector:
+  enabled: true
+  image:
+    repository: hashicorp/vault-k8s
+    tag: '1.10.0'
+# README: This is a scaffolding for Helm; use `helm repo add hashicorp https://helm.releases.hashicorp.com` and
+# `helm install vault hashicorp/vault -f infrastructure/helm/vault/values.yaml`

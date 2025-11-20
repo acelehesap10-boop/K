@@ -13,10 +13,12 @@ const bcrypt = require('bcrypt');
 const app = express();
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 // CORS configuration
 const corsOptions = {
@@ -29,9 +31,9 @@ const corsOptions = {
       'http://127.0.0.1:5000',
       'http://127.0.0.1:5001',
       'https://github.com',
-      'https://github.dev'
+      'https://github.dev',
     ];
-    
+
     if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost')) {
       callback(null, true);
     } else {
@@ -41,31 +43,44 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  maxAge: 86400
+  maxAge: 86400,
 };
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
+const { middlewareMetrics, metricsEndpoint } = require('../../metrics');
+const { initTracing } = require('../../telemetry/node-otel');
+initTracing('admin-api');
+app.use(middlewareMetrics());
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.warn(
+    'JWT_SECRET not set. For production, set a secure JWT secret in environment variables.'
+  );
+}
 
 // In-memory admin store (use database in production)
+const DEFAULT_ADMIN_PLAIN = process.env.ADMIN_PASSWORD || 'Admin@2024!';
 const admins = new Map([
-  ['berkecansuskun1998@gmail.com', {
-    email: 'berkecansuskun1998@gmail.com',
-    passwordHash: bcrypt.hashSync('Admin@2024!', 10), // Change in production
-    role: 'SUPER_ADMIN',
-    permissions: ['ALL'],
-    requireMFA: true,
-    ipWhitelist: [] // Empty = all IPs allowed
-  }]
+  [
+    'berkecansuskun1998@gmail.com',
+    {
+      email: 'berkecansuskun1998@gmail.com',
+      passwordHash: bcrypt.hashSync(DEFAULT_ADMIN_PLAIN, 10),
+      role: 'SUPER_ADMIN',
+      permissions: ['ALL'],
+      requireMFA: true,
+      ipWhitelist: [], // Empty = all IPs allowed
+    },
+  ],
 ]);
 
 // Middleware: Verify JWT
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
-  
+
   if (!token) {
     return res.status(401).json({ error: 'No token provided' });
   }
@@ -91,7 +106,7 @@ const checkPermission = (permission) => (req, res, next) => {
 // Login
 app.post('/api/admin/login', async (req, res) => {
   const { email, password, mfaCode } = req.body;
-  
+
   const admin = admins.get(email);
   if (!admin) {
     return res.status(401).json({ error: 'Invalid credentials' });
@@ -108,10 +123,10 @@ app.post('/api/admin/login', async (req, res) => {
   }
 
   const token = jwt.sign(
-    { 
-      email: admin.email, 
+    {
+      email: admin.email,
       role: admin.role,
-      permissions: admin.permissions 
+      permissions: admin.permissions,
     },
     JWT_SECRET,
     { expiresIn: '8h' }
@@ -122,8 +137,8 @@ app.post('/api/admin/login', async (req, res) => {
     admin: {
       email: admin.email,
       role: admin.role,
-      permissions: admin.permissions
-    }
+      permissions: admin.permissions,
+    },
   });
 });
 
@@ -139,8 +154,8 @@ app.get('/api/admin/stats', verifyToken, checkPermission('VIEW_STATS'), (req, re
       matchingEngine: 'ONLINE',
       marketData: 'ONLINE',
       riskEngine: 'ONLINE',
-      blockchainTracker: 'ONLINE'
-    }
+      blockchainTracker: 'ONLINE',
+    },
   });
 });
 
@@ -149,8 +164,8 @@ app.get('/api/admin/users', verifyToken, checkPermission('MANAGE_USERS'), (req, 
   res.json({
     users: [
       { id: 'u1', email: 'user1@example.com', status: 'ACTIVE', kycStatus: 'VERIFIED' },
-      { id: 'u2', email: 'user2@example.com', status: 'ACTIVE', kycStatus: 'PENDING' }
-    ]
+      { id: 'u2', email: 'user2@example.com', status: 'ACTIVE', kycStatus: 'PENDING' },
+    ],
   });
 });
 
@@ -159,8 +174,8 @@ app.get('/api/admin/risk-params', verifyToken, checkPermission('MANAGE_RISK'), (
   res.json({
     maxLeverage: 10,
     maintenanceMargin: 0.05,
-    initialMargin: 0.10,
-    liquidationBuffer: 0.03
+    initialMargin: 0.1,
+    liquidationBuffer: 0.03,
   });
 });
 
@@ -170,31 +185,36 @@ app.post('/api/admin/risk-params', verifyToken, checkPermission('MANAGE_RISK'), 
     success: true,
     message: 'Risk parameters updated',
     requiresApproval: true,
-    approvalId: `APP-${Date.now()}`
+    approvalId: `APP-${Date.now()}`,
   });
 });
 
 // Trading controls
 app.post('/api/admin/halt-trading', verifyToken, checkPermission('TRADING_CONTROL'), (req, res) => {
   const { symbol, assetClass, reason } = req.body;
-  
+
   res.json({
     success: true,
     message: `Trading halted for ${assetClass}:${symbol}`,
     reason,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 });
 
-app.post('/api/admin/resume-trading', verifyToken, checkPermission('TRADING_CONTROL'), (req, res) => {
-  const { symbol, assetClass } = req.body;
-  
-  res.json({
-    success: true,
-    message: `Trading resumed for ${assetClass}:${symbol}`,
-    timestamp: Date.now()
-  });
-});
+app.post(
+  '/api/admin/resume-trading',
+  verifyToken,
+  checkPermission('TRADING_CONTROL'),
+  (req, res) => {
+    const { symbol, assetClass } = req.body;
+
+    res.json({
+      success: true,
+      message: `Trading resumed for ${assetClass}:${symbol}`,
+      timestamp: Date.now(),
+    });
+  }
+);
 
 // Audit logs
 app.get('/api/admin/audit-logs', verifyToken, checkPermission('VIEW_AUDIT'), (req, res) => {
@@ -205,16 +225,16 @@ app.get('/api/admin/audit-logs', verifyToken, checkPermission('VIEW_AUDIT'), (re
         action: 'RISK_PARAMS_UPDATED',
         admin: req.admin.email,
         timestamp: Date.now() - 3600000,
-        details: { maxLeverage: { old: 10, new: 15 } }
+        details: { maxLeverage: { old: 10, new: 15 } },
       },
       {
         id: 'log2',
         action: 'TRADING_HALTED',
         admin: req.admin.email,
         timestamp: Date.now() - 7200000,
-        details: { symbol: 'BTC/USD', reason: 'High volatility' }
-      }
-    ]
+        details: { symbol: 'BTC/USD', reason: 'High volatility' },
+      },
+    ],
   });
 });
 
@@ -223,11 +243,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', service: 'admin-api' });
 });
 
+// Prometheus metrics endpoint
+metricsEndpoint(app);
+
 const PORT = process.env.ADMIN_API_PORT || 6005;
 app.listen(PORT, () => {
   console.log(`Admin API running on port ${PORT}`);
   console.log(`Admin account: berkecansuskun1998@gmail.com`);
-  console.log(`Default password: Admin@2024! (CHANGE IN PRODUCTION)`);
+  console.warn(
+    'Default admin password is set in code. Change to a secure password via environment variables in production.'
+  );
 });
 
 module.exports = { app };

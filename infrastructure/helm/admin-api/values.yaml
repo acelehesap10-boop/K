@@ -1,0 +1,14 @@
+replicaCount: 2
+
+image:
+  repository: k/admin-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 6005
+
+env:
+  - name: LOG_LEVEL
+    value: info

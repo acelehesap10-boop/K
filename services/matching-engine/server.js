@@ -9,9 +9,13 @@ const socketIO = require('socket.io');
 const { MatchingEngine } = require('./index');
 
 const app = express();
+const { middlewareMetrics, metricsEndpoint } = require('../../metrics');
+const { initTracing } = require('../../telemetry/node-otel');
+initTracing('matching-engine');
+app.use(middlewareMetrics());
 const server = http.createServer(app);
 const io = socketIO(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
+  cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
 app.use(express.json());
@@ -57,6 +61,9 @@ app.get('/api/metrics', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', service: 'matching-engine' });
 });
+
+// Prometheus metrics endpoint
+metricsEndpoint(app);
 
 // WebSocket
 io.on('connection', (socket) => {

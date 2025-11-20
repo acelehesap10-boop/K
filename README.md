@@ -5,14 +5,16 @@ Modern web teknolojileri ve zengin kütüphanelerle donatılmış profesyonel bi
 ## 🎯 Özellikler
 
 ### Backend
+
 - **Node.js** - Express.js framework
-- **Python** - Flask framework  
+- **Python** - Flask framework
 - **MongoDB** - NoSQL veritabanı
 - **Socket.IO** - Gerçek zamanlı iletişim
 - **JWT** - Güvenli kimlik doğrulama
 - **Redis & Celery** - Kuyruk yönetimi
 
 ### Frontend
+
 - **React** - Modern UI kütüphanesi
 - **Next.js** - React framework
 - **TypeScript** - Tip güvenli JavaScript
@@ -20,19 +22,26 @@ Modern web teknolojileri ve zengin kütüphanelerle donatılmış profesyonel bi
 - **Webpack & Babel** - Build araçları
 
 ### AI & Machine Learning
-- **TensorFlow** - Derin öğrenme
-- **PyTorch** - Neural network framework
-- **Keras** - High-level ML API
-- **Scikit-learn** - ML algoritmaları
-- **OpenCV** - Bilgisayar görüşü
+
+## 🧩 Yeni eklentiler ve prototipler
+
+Bu repo yeni prototipleri içerir:
+
+- `connectors/` — FIX acceptor (Node) / OUCH-ITCH skeleton (Rust)
+- `sor/` — Smart Order Router simulator (Python): latency-aware routing prototype
+- `matching-engine/README-dpdk.md` — DPDK/Netmap entegrasyonu için notlar ve feature flag
+
+Bu prototipleri çalıştırmak için `scripts/run-sor.sh` veya `connectors/fix` dizininde `npm install` ve `npm start` çalıştırabilirsiniz.
 
 ### Data Science
+
 - **Pandas** - Veri analizi
 - **NumPy** - Sayısal hesaplamalar
 - **Matplotlib & Seaborn** - Veri görselleştirme
 - **SciPy** - Bilimsel hesaplamalar
 
 ### Testing & Quality
+
 - **Pytest** - Python test framework
 - **Selenium** - Browser automation
 - **Black** - Python code formatter
@@ -43,6 +52,7 @@ Modern web teknolojileri ve zengin kütüphanelerle donatılmış profesyonel bi
 ## 📦 Kurulum
 
 ### Gereksinimler
+
 - Node.js 22.x
 - Python 3.12.x
 - MongoDB (opsiyonel)
@@ -57,34 +67,56 @@ Modern web teknolojileri ve zengin kütüphanelerle donatılmış profesyonel bi
 cp .env.example .env
 ```
 
+## 🚀 Tek komutla geliştirme (local)
+
+Varsa Docker/compose ile hızlı başlatma:
+
+```bash
+./scripts/docker-start.sh
+```
+
+ya da VS Code Tasks ile:
+
+```
+# Run Task -> Start Node Server
+# Run Task -> Start Python Server
+```
+
 ## 🚀 Kullanım
 
 ### Node.js Server Başlatma
+
 ```bash
 npm start
 # veya development mode için
 npm run dev
 ```
+
 Server: http://localhost:5000
 
 ### Python Flask Server Başlatma
+
 ```bash
 npm run python
 # veya
 python app.py
 ```
+
 Server: http://localhost:5001
 
 ### Web Arayüzü
+
 index.html dosyasını tarayıcınızda açın
 
 ## 📚 API Endpoints
 
 ### Node.js API
+
 - `GET /api` - API bilgileri
 - `GET /api/health` - Sağlık kontrolü
 
 ### Python API
+
 - `GET /` - Flask API bilgileri
 - `GET /api/python/health` - Sağlık kontrolü
 - `POST /api/python/data` - Veri işleme
@@ -92,6 +124,7 @@ index.html dosyasını tarayıcınızda açın
 ## 🔧 Geliştirme
 
 ### Kod Formatla
+
 ```bash
 # JavaScript
 npm run format
@@ -101,6 +134,7 @@ black .
 ```
 
 ### Linting
+
 ```bash
 # JavaScript
 npm run lint
@@ -108,6 +142,24 @@ npm run lint
 # Python
 flake8
 mypy
+
+### VS Code - Önerilen Uzantılar ve Ayarlar
+
+Bu proje için önerilen VS Code uzantıları workspace'e eklendi; VS Code açıldığında eklenmeleri istenecektir.
+
+- ESLint
+- Prettier
+- Python (ms-python.python)
+- Pylance (ms-python.vscode-pylance)
+- Docker
+- GitLens
+- Remote - Containers
+- Copilot Studio (opsiyonel)
+- Copilot Vision (opsiyonel)
+
+Dev container kullanmak için `.devcontainer/devcontainer.json` dosyasını takip edebilirsiniz; uzantılar devcontainer içinde otomatik eklenecektir.
+
+Not: "Raptor mini (Preview)" gibi özel önizleme uzantılarını tüm istemciler için etkinleştirmek istiyorsanız, uzantı ID'sini biliyorsanız onu `.vscode/extensions.json` dosyasına ekleyebilir veya ek config ayarları ile kurumunuzun VS Code ayarlarında zorlayabilirsiniz.
 ```
 
 ## 📝 Proje Yapısı
@@ -125,9 +177,11 @@ K/
 ## 🛠️ Yüklü Teknolojiler
 
 ### Node.js Paketleri
+
 express, react, react-dom, next, typescript, tailwindcss, axios, socket.io, mongoose, bcrypt, jsonwebtoken, cors, dotenv, helmet, express-validator, multer, nodemon, webpack, babel, eslint, prettier
 
 ### Python Paketleri
+
 django, flask, fastapi, sqlalchemy, requests, beautifulsoup4, selenium, pandas, numpy, scipy, matplotlib, seaborn, scikit-learn, tensorflow, keras, torch, torchvision, pillow, opencv-python, nltk, spacy, redis, celery, pytest, black, flake8, mypy
 
 ## 🔒 Güvenlik

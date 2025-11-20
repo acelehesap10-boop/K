@@ -1,0 +1,48 @@
+{
+  "name": "K Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+  "extensions": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-azuretools.vscode-docker",
+    "eamodio.gitlens",
+    "ms-vscode-remote.remote-containers",
+    "ms-copilotstudio.vscode-copilotstudio",
+    "ms-vscode.vscode-copilot-vision"
+  ],
+  "forwardPorts": [5000, 5001, 3000, 6379],
+  "postCreateCommand": "npm install && (pip3 install -r requirements.txt || true)",
+  "remoteUser": "vscode"
+}{
+  "name": "K - Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/node": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers/features/python": {
+      "version": "3.12"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "postCreateCommand": "npm install || true && pip3 install -r requirements.txt --user || true",
+  "remoteUser": "vscode"
+}

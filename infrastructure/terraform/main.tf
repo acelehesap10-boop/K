@@ -1,3 +1,32 @@
+variable "aws_region" { default = "us-east-1" }
+variable "kubernetes_host" { default = "" }
+variable "kubernetes_ca" { default = "" }
+variable "kubernetes_token" { default = "" }
+
+output "kubernetes_host" {
+  value = var.kubernetes_host
+}
+
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  name   = "k-platform-vpc"
+  cidr   = "10.10.0.0/16"
+  azs    = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  public_subnets  = ["10.10.1.0/24", "10.10.2.0/24"]
+  private_subnets = ["10.10.101.0/24", "10.10.102.0/24"]
+}
+
+module "eks" {
+  source          = "terraform-aws-modules/eks/aws"
+  cluster_name    = "k-platform-cluster"
+  cluster_version = "1.28"
+  subnets         = module.vpc.private_subnets
+  vpc_id          = module.vpc.vpc_id
+  manage_aws_auth = true
+  worker_groups_launch_template = [
+    { name = "compute-1" , instance_type = "m6i.large", desired_capacity = 2 }
+  ]
+}
 # Terraform configuration for AWS EKS deployment
 terraform {
   required_version = ">= 1.0"

@@ -1,0 +1,15 @@
+{
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Order Processing Time (Histogram)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(matching_engine_order_processing_seconds_bucket[5m])) by (le))"
+        }
+      ]
+    }
+  ],
+  "title": "Matching Engine Overview"
+}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: matching-engine
+description: Microsecond matching engine Helm chart
+type: application
+version: 0.1.0
+appVersion: '0.1.0'
